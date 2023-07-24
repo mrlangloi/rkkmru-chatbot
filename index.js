@@ -5,10 +5,10 @@ require('dotenv').config()
 const opts = {
   identity: {
     username: `${process.env.BOT_USERNAME}`,
-    password: `${process.env.BOT_PASSWORD}`
+    password: `${process.env.BOT_OAUTH}`
   },
   channels: [
-    '<CHANNEL_NAME>'
+    `${process.env.BOT_CHANNEL}`
   ]
 };
 
@@ -29,12 +29,18 @@ function onMessageHandler (target, context, msg, self) {
   // Remove whitespace from chat message
   const commandName = msg.trim();
 
+  console.log(`* Executing ${commandName} command`);
+
   // If the command is known, let's execute it
   if (commandName === '!dice') {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
-    console.log(`* Executed ${commandName} command`);
-  } else {
+  } 
+  else if (commandName === '!test') {
+    const testStr = 'test msg';
+    client.say(target, `${testStr}`);
+  }
+  else {
     console.log(`* Unknown command ${commandName}`);
   }
 }

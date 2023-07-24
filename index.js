@@ -23,29 +23,39 @@ client.on('connected', onConnectedHandler);
 client.connect();
 
 // Called every time a message comes in
-function onMessageHandler (target, context, msg, self) {
-  if (self) { return; } // Ignore messages from the bot
+function onMessageHandler (channel, tags, msg, self) {
 
-  // Remove whitespace from chat message
-  const commandName = msg.trim();
+  //Ignores messages from the bot itself or messages that do not start with !
+  if(self || !message.startsWith('!')) {
+    return;
+  }
+  
+  //Parse the command into an array with arguments
+	const args = message.trim().slice(1).split(' ');
+	const command = args.shift().toLowerCase();
 
-  console.log(`* Executing ${commandName} command`);
+  console.log(`* User ${tags.username} executed !${command} command`);
 
-  // If the command is known, let's execute it
-  if (commandName === '!dice') {
-    const num = rollDice();
-    client.say(target, `You rolled a ${num}`);
-  } 
-  else if (commandName === '!test') {
+  //Commands
+	if(command === 'echo') {
+		client.say(channel, `@${tags.username}, you said: "${args.join(' ')}"`);
+	}
+  else if (command === 'test') {
     const testStr = 'test msg';
-    client.say(target, `${testStr}`);
+    client.say(channel, `${testStr}`);
+  }
+  else if (command === 'dice') {
+    const num = rollDice();
+    client.say(channel, `You rolled a ${num}`);
+  } 
+  else if (command === '') {
+
   }
   else {
-    console.log(`* Unknown command ${commandName}`);
+    console.log(`* Unknown command !${command}`);
   }
 }
 
-// Function called when the "dice" command is issued
 function rollDice () {
   const sides = 6;
   return Math.floor(Math.random() * sides) + 1;

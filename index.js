@@ -44,8 +44,12 @@ function onMessageHandler (channel, tags, msg, self) {
     const testStr = 'test msg';
     client.say(channel, `${testStr}`);
   }
-  else if (command === 'dice') {
-    const num = rollDice();
+  else if (command === 'd6') {
+    const num = Math.floor(Math.random() * 6) + 1;;
+    client.say(channel, `You rolled a ${num}`);
+  } 
+  else if (command === 'd20') {
+    const num = Math.floor(Math.random() * 20) + 1;
     client.say(channel, `You rolled a ${num}`);
   } 
   else if (command === '') {
@@ -54,11 +58,6 @@ function onMessageHandler (channel, tags, msg, self) {
   else {
     console.log(`* Unknown command !${command}`);
   }
-}
-
-function rollDice () {
-  const sides = 6;
-  return Math.floor(Math.random() * sides) + 1;
 }
 
 // Called every time the bot connects to Twitch chat

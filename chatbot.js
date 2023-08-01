@@ -4,9 +4,9 @@ const axios = require('axios');
 
 /**
  * TODO
- * - finish getFollowage() method
  * - add more commands
- * - perhaps find an emote parser??
+ * - perhaps find an emote parser to display emotes from chat
+ * onto the stream??
  */
 
 // Configuration options
@@ -37,7 +37,7 @@ client.on('connected', onConnectedHandler);
 client.connect();
 
 // Called every time a message comes in
-function onMessageHandler(channel, tags, msg, self) {
+async function onMessageHandler(channel, tags, msg, self) {
 
   //Ignores messages from the bot itself or messages that do not start with '!'
   if (self || !msg.startsWith('!')) {
@@ -73,6 +73,16 @@ function onMessageHandler(channel, tags, msg, self) {
     const num = Math.round(Math.random());
     client.say(channel, `@${tags.username} flipped a ${coin[num]}`);
   }
+  else if (command === 'dadjoke') {
+    const getDadJoke = async () => {
+      const url = 'https://icanhazdadjoke.com/';
+      const response = await axios.get(url, { 
+        headers: { 'Accept': 'application/json' } 
+      });
+      client.say(channel, `${response.data.joke} WeirdChamp`);
+    }
+    getDadJoke();
+  }
   else if (command === '8ball') {
     const get8Ball = async () => {
       const url = 'https://eightballapi.com/api';
@@ -85,24 +95,53 @@ function onMessageHandler(channel, tags, msg, self) {
     const getFollowage = async (userID, channelID) => {
       const testID = 229074073;
       const url = `https://api.twitch.tv/helix/channels/followed?user_id=${userID}&broadcaster_id=${testID}`;
-      const response = await axios.get(url, { headers });
+      const response = await axios.get(url, { headers: headers });
       const channelName = response.data.data[0]['broadcaster_name'];
       const followDate = new Date(response.data.data[0]['followed_at']);
-      console.log(followDate);
-      client.say(channel, `@${tags.username} has been following @${channelName} for ASDF`);
+      const currentDate = Date.now();
+      const totalDays = (currentDate - followDate) / (1000 * 60 * 60 * 24);
+      const years = Math.floor(totalDays / 365);
+      const months = Math.floor((totalDays % 365) / 30);
+      const days = Math.floor((totalDays % 365) % 30);
+
+      client.say(channel, `@${tags.username} has been following @${channelName} for ${years} years, ${months} months, and ${days} days! POGCRAZY`);
     }
     getFollowage(tags['user-id'], tags['room-id']);
   }
-  else if (command === 'shoutout') {
-    const shoutoutMsg = `BIG shoutout to ${args[0]}! They are an awesome streamer who last played . Make sure to show them some love and check out their channel at twitch.tv/${args[0]}. Go give them a follow and support their community! 🎉🎊`;
+  else if (command === 'so') {
+
+    const getLastStreamed = async (displayName) => {
+      const url = `https://api.twitch.tv/helix/search/channels?query=${displayName}`;
+      const response = await axios.get(url, { headers: headers });
+      return response.data.data[0]['game_name'];
+    }
+
+    let lastStreamed = await getLastStreamed(args[0]);
+    console.log(lastStreamed);
+
+    // Sometimes twitch API is unable to get the game
+    if (lastStreamed === '') {
+      lastStream = "<Twitch API is stoopid and can't get game>"
+    }
+
+    const displayShoutoutMessage = () => {
+      const shoutoutMsg = `Shoutout to @${args[0]}! They last streamed ${lastStreamed}. Check out their channel at https://twitch.tv/${args[0]} 🎉🎊`;
+      client.say(channel, shoutoutMsg);
+    }
+
+    setTimeout(displayShoutoutMessage, 1000);
   }
   else {
     console.log(`* Unknown command !${command}`);
   }
 }
 
-
-
+const getUserID = async (displayName) => {
+  const url = `https://api.twitch.tv/helix/users?login=${displayName}`;
+  const response = await axios.get(url, { headers: headers });
+  console.log(response.data.data[0]);
+  return response.data.data[0]['id'];
+}
 
 
 // Called every time the bot connects to Twitch chat

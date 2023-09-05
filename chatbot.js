@@ -1,6 +1,7 @@
 require('dotenv').config()
 const tmi = require('tmi.js');
 const axios = require('axios');
+const emoteParser = require("tmi-emote-parse");
 
 /**
  * TODO
@@ -9,16 +10,34 @@ const axios = require('axios');
  * onto the stream??
  */
 
+
+// Register Twitch API credentials (ClientID and OAuth Token) needed for User-ID request
+emoteParser.setTwitchCredentials(`${process.env.BOT_CLIENTID}`, `${process.env.BOT_OAUTH}}`);
+
+
+// Load emotes and badges for a specific channel to later parse/use
+emoteParser.loadAssets("twitch");
+emoteParser.loadAssets("twitchdev");
+
+
 // Configuration options
+// Documentation: https://github.com/tmijs/tmi.js
 const opts = {
+  options: {
+    debug: false
+  },
+  connection: {
+    reconnect: true,
+    secure: true
+  },
   identity: {
     username: `${process.env.BOT_USERNAME}`,
     password: `${process.env.BOT_OAUTH}`
   },
-  channels: [
-    `${process.env.BOT_CHANNEL}`
-  ]
+  channels: [`${process.env.BOT_CHANNEL}`]
+  // channels: [ '#twitch', '#twitchdev' ] /* Channels to join with leading '#' */
 };
+
 
 // Headers for GET requests to Twitch API
 const headers = {
@@ -26,18 +45,41 @@ const headers = {
   'Authorization': `Bearer ${process.env.BOT_OAUTH}`
 };
 
+
 // Create a client with our options
 const client = new tmi.client(opts);
+
 
 // Register our event handlers (defined below)
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
+
 // Connect to Twitch:
-client.connect();
+client.connect().catch(console.error);
+
 
 // Called every time a message comes in
 async function onMessageHandler(channel, tags, msg, self) {
+
+  // tmi emote parser
+  // Replace Emotes with HTML in a given message for a specific channel
+  console.log(emoteParser.replaceEmotes(message, userstate, channel, self));
+  /*
+    -> message: 'I can see you ariW' 
+    -> output:  'I can see you <img class="message-emote" src="https://cdn.betterttv.net/emote/56fa09f18eff3b595e93ac26/3x"/>'
+  */
+
+  // Return the badges the message author uses on a specific channel
+  console.log(emoteParser.getBadges(userstate, channel));
+  /*
+    [{
+      name: 'premium/1',
+      info: 'Prime Gaming',
+      img: 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/3'
+    }, ...] 
+  */
+
 
   //Ignores messages from the bot itself or messages that do not start with '!'
   if (self || !msg.startsWith('!')) {
@@ -68,11 +110,13 @@ async function onMessageHandler(channel, tags, msg, self) {
       client.say(channel, `@${tags.username} rolled a ${num}`);
     }
   }
+  // Flip a coin
   else if (command === 'coinflip') {
     const coin = ['heads', 'tails'];
     const num = Math.round(Math.random());
     client.say(channel, `@${tags.username} flipped a ${coin[num]}`);
   }
+  // Get a random dad joke from the icanhazdadjoke API
   else if (command === 'dadjoke') {
     const getDadJoke = async () => {
       const url = 'https://icanhazdadjoke.com/';
@@ -83,6 +127,7 @@ async function onMessageHandler(channel, tags, msg, self) {
     }
     getDadJoke();
   }
+  // Generate a random response from the 8ball API
   else if (command === '8ball') {
     const get8Ball = async () => {
       const url = 'https://eightballapi.com/api';
@@ -91,6 +136,7 @@ async function onMessageHandler(channel, tags, msg, self) {
     }
     get8Ball();
   }
+  // Get the duration of time a user has been following the channel
   else if (command === 'followage') {
     const getFollowage = async (userID, channelID) => {
       const testID = 229074073;
@@ -108,6 +154,7 @@ async function onMessageHandler(channel, tags, msg, self) {
     }
     getFollowage(tags['user-id'], tags['room-id']);
   }
+  // Shoutout a user
   else if (command === 'so') {
 
     const getLastStreamed = async (displayName) => {
@@ -130,6 +177,36 @@ async function onMessageHandler(channel, tags, msg, self) {
     }
 
     setTimeout(displayShoutoutMessage, 1000);
+  }
+  // Timeout a user for a specified amount of time
+  else if (command === 'timeout') {
+    if (tags.mod || tags.username === `${process.env.BOT_CHANNEL}`) {
+      const userID = await getUserID(args[0]);
+      client.say(channel, `@${args[0]} has been timed out for ${args[1]} seconds`);
+      client.timeout(channel, args[0], args[1]);
+    }
+  }
+  // Ban a user
+  else if (command === 'ban') {
+    if (tags.mod || tags.username === `${process.env.BOT_CHANNEL}`) {
+      const userID = await getUserID(args[0]);
+      client.say(channel, `@${args[0]} has been banned`);
+      client.ban(channel, args[0]);
+    }
+  }
+  // Unban a user
+  else if (command === 'unban') {
+    if (tags.mod || tags.username === `${process.env.BOT_CHANNEL}`) {
+      const userID = await getUserID(args[0]);
+      client.say(channel, `@${args[0]} has been unbanned`);
+      client.unban(channel, args[0]);
+    }
+  }
+  // Clear chat
+  else if (command === 'clear') {
+    if (tags.mod || tags.username === `${process.env.BOT_CHANNEL}`) {
+      client.clear(channel);
+    }
   }
   else {
     console.log(`* Unknown command !${command}`);

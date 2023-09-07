@@ -6,8 +6,7 @@ const emoteParser = require("tmi-emote-parse");
 /**
  * TODO
  * - add more commands
- * - perhaps find an emote parser to display emotes from chat
- * onto the stream??
+ * - implemented emote parser however it needs to be tested
  */
 
 
@@ -64,14 +63,14 @@ async function onMessageHandler(channel, tags, msg, self) {
 
   // tmi emote parser
   // Replace Emotes with HTML in a given message for a specific channel
-  console.log(emoteParser.replaceEmotes(message, userstate, channel, self));
+  console.log(emoteParser.replaceEmotes(msg, tags, channel, self));
   /*
     -> message: 'I can see you ariW' 
     -> output:  'I can see you <img class="message-emote" src="https://cdn.betterttv.net/emote/56fa09f18eff3b595e93ac26/3x"/>'
   */
 
   // Return the badges the message author uses on a specific channel
-  console.log(emoteParser.getBadges(userstate, channel));
+  console.log(emoteParser.getBadges(tags, channel));
   /*
     [{
       name: 'premium/1',

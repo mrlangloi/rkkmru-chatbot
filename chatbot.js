@@ -79,9 +79,16 @@ async function onMessageHandler(channel, tags, msg, self) {
     }, ...] 
   */
 
+  // Ignores messages from the bot itself
+  if (self) {
+    return;
+  }
 
-  //Ignores messages from the bot itself or messages that do not start with '!'
-  if (self || !msg.startsWith('!')) {
+  // If the message is not from the bot itself, check for and parse any emotes within the message to display
+  // parseEmotesAndDisplay(msg, tags, channel, self);
+
+  // After displaying emotes, we can ignore the entire message if it doesn't start with '!'
+  if(!msg.startsWith('!')) {
     return;
   }
 
@@ -217,6 +224,14 @@ const getUserID = async (displayName) => {
   const response = await axios.get(url, { headers: headers });
   console.log(response.data.data[0]);
   return response.data.data[0]['id'];
+}
+
+const parseEmotesAndDisplay = (message, tags, channel, self) => {
+  if(self) {
+    return;
+  }
+  // parse the message and sent to front-end any unique emotes that appear within the message
+
 }
 
 
